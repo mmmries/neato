@@ -17,4 +17,12 @@ defmodule Gnat.SubscriptionProxyTest do
     refute Map.has_key?(state.consumers, pid)
     refute Map.has_key?(state.subscriptions, sid2)
   end
+
+  test "receiving messages" do
+    pid = spawn(fn -> :noop end)
+    my_pid = self()
+    {state, {:sub, ^my_pid, "topic", [sid: sid]}} = new() |> sub(pid, "topic", [])
+    message = %{body: "ohai", topic: "topic", sid: sid, reply_to: nil}
+    {^state, {:send, ^pid, ^message}} = receive_message(state, message)
+  end
 end

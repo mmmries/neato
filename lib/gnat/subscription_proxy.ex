@@ -25,7 +25,11 @@ defmodule Gnat.SubscriptionProxy do
     end
   end
 
-  def receive_message(state, message) do
+  def receive_message(state, %{sid: sid}=message) do
+    case Map.get(state.subscriptions, sid) do
+      nil -> {:error, :no_such_subscription}
+      %{consumer: pid} -> {state, {:send, pid, message}}
+    end
   end
 
   def connection_lost(state) do
