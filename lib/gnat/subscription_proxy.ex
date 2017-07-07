@@ -15,14 +15,8 @@ defmodule Gnat.SubscriptionProxy do
   end
 
   def unsub(state, sid, opts) do
-    case Map.get(state.subscriptions, sid) do
-      nil -> {:error, :unknown_subscription}
-      subscription ->
-        subscriptions = Map.delete(state.subscriptions, sid)
-        consumers = remove_from_consumer(state.consumers, subscription)
-        state = %{state | subscriptions: subscriptions, consumers: consumers}
-        {state, {:unsub, sid, []}}
-    end
+    state = remove_or_update_subscription(state, sid, opts)
+    {state, {:unsub, sid, opts}}
   end
 
   def receive_message(state, %{sid: sid}=message) do
@@ -56,6 +50,22 @@ defmodule Gnat.SubscriptionProxy do
       subscriptions ->
         subscriptions = Enum.reject(consumers[consumer], &( &1.sid == sid ))
         Map.put(consumers, consumer, subscriptions)
+    end
+  end
+
+  defp remove_or_update_subscription(state, sid, opts) do
+    case Map.get(state.subscriptions, sid) do
+      nil -> {:error, :unknown_subscription}
+      subscription ->
+        case Keyword.get(opts, :max_messages) do
+          nil ->
+            subscriptions = Map.delete(state.subscriptions, sid)
+            consumers = remove_from_consumer(state.consumers, subscription)
+            %{state | subscriptions: subscriptions, consumers: consumers}
+          max_messages ->
+            subscription = %{subscription | unsub_after: max_messages}
+            subscriptions = Map.put(state.subscriptions, sid, %{sub #uhhhh this is all starting to seem like a bad idea at thsi point
+        end
     end
   end
 

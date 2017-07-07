@@ -9,7 +9,7 @@ defmodule Gnat.ConnectionManager do
       connection_settings: Map.fetch!(settings, :connection_settings),
       gnat: nil,
       reconnect_backoff: Map.get(settings, :reconnect_backoff, 2000),
-      subscriptions: [],
+      subscriptions: %Gnat.SubscriptionProxy{},
     }
     Process.flag(:trap_exit, true)
     send self(), :attempt_connection
