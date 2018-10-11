@@ -1,24 +1,10 @@
+{:ok, manager_pid} = Gnat.ConnectionSupervisor.start_link(%{name: :gnat, backoff_period: 4_000, connection_settings: [%{}]})
+
+{:ok, _pid} = Gnat.ConsumerSupervisor.start_link(%{connection_name: :gnat, consuming_function: {EchoServer, :handle}, subscription_topics: [%{topic: "echo", queue_group: "echo"}]}, name: :consumer)
+
 defmodule EchoServer do
-  def run(gnat) do
-    spawn(fn -> init(gnat) end)
-  end
-
-  def init(gnat) do
-    Gnat.sub(gnat, self(), "echo", queue_group: "bench")
-    loop(gnat)
-  end
-
-  def loop(gnat) do
-    receive do
-      {:msg, %{topic: "echo", reply_to: reply_to, body: "ping"}} ->
-        spawn(fn ->
-          Gnat.pub(gnat, reply_to, "pong")
-        end)
-      other ->
-        IO.puts "server received: #{inspect other}"
-    end
-
-    loop(gnat)
+  def handle(%{body: body, reply_to: reply_to}) do
+    Gnat.pub(:gnat, reply_to, body)
   end
 
   def wait_loop do
@@ -26,10 +12,5 @@ defmodule EchoServer do
     wait_loop()
   end
 end
-
-(1..1) |> Enum.map(fn(_i) ->
-  {:ok, gnat} = Gnat.start_link()
-  EchoServer.run(gnat)
-end)
 
 EchoServer.wait_loop()

@@ -1,13 +1,15 @@
 defmodule Client do
   require Logger
 
-  def setup(_id) do
-    {:ok, gnat} = Gnat.start_link()
-    gnat
+  def setup(id) do
+    #{:ok, gnat} = Gnat.start_link()
+    #gnat
+    partition = rem(id, 4)
+    String.to_atom("gnat#{partition}")
   end
 
   def send_request(gnat, request) do
-    Gnat.request(gnat, "echo", request)# |> IO.inspect
+    {:ok, _} = Gnat.request(gnat, "echo", request)# |> IO.inspect
   end
 
   def send_requests(gnat, how_many, request) do
@@ -80,4 +82,10 @@ defmodule Benchmark do
   end
 end
 
-Benchmark.benchmark(16, 20_000, "ping")
+{:ok, _pid} = Gnat.start_link(%{}, name: :gnat0)
+{:ok, _pid} = Gnat.start_link(%{}, name: :gnat1)
+{:ok, _pid} = Gnat.start_link(%{}, name: :gnat2)
+{:ok, _pid} = Gnat.start_link(%{}, name: :gnat3)
+:timer.sleep(500) # let the connection get started
+
+Benchmark.benchmark(32, 20_000, "ping")
