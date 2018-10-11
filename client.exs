@@ -1,10 +1,13 @@
+Application.put_env(:client, :num_connections, 8)
+num_requesters = 2048
+requests_per_requester = 2_000
+
 defmodule Client do
   require Logger
 
   def setup(id) do
-    #{:ok, gnat} = Gnat.start_link()
-    #gnat
-    partition = rem(id, 4)
+    num_connections = Application.get_env(:client, :num_connections)
+    partition = rem(id, num_connections)
     String.to_atom("gnat#{partition}")
   end
 
@@ -62,12 +65,11 @@ defmodule Benchmark do
         parent = self()
         spawn(fn() ->
           gnat = Client.setup(i)
-          IO.puts "starting requests #{i}"
+          #IO.puts "starting requests #{i}"
           Client.send_requests(gnat, requests_per_actor, request)
-          IO.puts "done with requests #{i}"
+          #IO.puts "done with requests #{i}"
           send parent, :ack
         end)
-        :timer.sleep(10) # we get timeouts if we try to flood the server with a ton of new connections all at once
       end)
       wait_for_times(num_actors)
     end)
@@ -82,10 +84,11 @@ defmodule Benchmark do
   end
 end
 
-{:ok, _pid} = Gnat.start_link(%{}, name: :gnat0)
-{:ok, _pid} = Gnat.start_link(%{}, name: :gnat1)
-{:ok, _pid} = Gnat.start_link(%{}, name: :gnat2)
-{:ok, _pid} = Gnat.start_link(%{}, name: :gnat3)
-:timer.sleep(500) # let the connection get started
+num_connections = Application.get_env(:client, :num_connections)
+Enum.each(0..(num_connections - 1), fn(i) ->
+  name = :"gnat#{i}"
+  {:ok, _pid} = Gnat.start_link(%{}, name: name)
+end)
+:timer.sleep(500) # let the connections get started
 
-Benchmark.benchmark(32, 20_000, "ping")
+Benchmark.benchmark(num_requesters, requests_per_requester, "ping")
