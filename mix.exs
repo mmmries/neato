@@ -2,7 +2,7 @@ defmodule Gnat.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/mmmries/gnat"
-  @version "1.2.1"
+  @version "1.3.0-rc0"
 
   def project do
     [
@@ -33,6 +33,7 @@ defmodule Gnat.Mixfile do
   defp deps do
     [
       {:benchee, "~> 1.0", only: :dev},
+      {:cowlib, "~> 2.0"},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: :dev},
       {:jason, "~> 1.1"},
